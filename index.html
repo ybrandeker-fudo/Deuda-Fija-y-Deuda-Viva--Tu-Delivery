@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deuda Tu Delivery AR</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23FF5023'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+  :root{
+    --naranja:#FF5023; --naranja-osc:#E5401A; --naranja-suave:#FFC9BB; --naranja-tenue:#FFEEE9;
+    --indigo:#3938A0; --indigo-medio:#5F5FC4; --lavanda:#E1E1F5;
+    --navy:#071D37;
+    --ink:#3B3B3B; --muted:#7A7A80; --gris:#C6C6C6;
+    --bg:#FBF7F5; --panel:#ffffff; --line:#EFE6E2;
+    --ok:#0F7B4F; --ok-suave:#E6F4ED;
+    --warn:#8A5A00; --warn-suave:#FDF3E0;
+    --bad:#A11B10; --bad-suave:#FCE9E6;
+    --radius:12px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --sans:'Barlow',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:400 14px/1.55 var(--sans)}
+  .banda{background:var(--naranja);color:#fff;padding:26px 0 24px}
+  .banda .wrap{padding-top:0;padding-bottom:0}
+  .banda h1{font-size:26px;font-weight:700;margin:0;letter-spacing:-.02em}
+  .banda .sub{color:var(--naranja-suave);font-size:13.5px;font-weight:500;margin-top:2px}
+  .banda p{margin:12px 0 0;max-width:760px;color:#fff;opacity:.95;font-size:14px}
+  .banda b{font-weight:600}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 72px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-top:16px;
+    box-shadow:0 1px 2px rgba(7,29,55,.04)}
+  .card h2{font-size:12px;text-transform:uppercase;letter-spacing:.09em;color:var(--naranja);font-weight:700;margin:0 0 14px}
+  .sub{color:var(--muted);font-size:13px}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+  .drop{border:1.5px dashed var(--naranja-suave);border-radius:var(--radius);padding:14px;background:var(--naranja-tenue);
+    cursor:pointer;transition:.15s}
+  .drop:hover,.drop.over{border-color:var(--naranja);background:#FFE3DB}
+  .drop.ok{border-style:solid;border-color:var(--indigo-medio);background:var(--lavanda)}
+  .drop .t{font-weight:600;font-size:13.5px}
+  .drop .d{color:var(--muted);font-size:12px;margin-top:3px}
+  .drop .f{font-size:12px;margin-top:7px;font-family:var(--mono);word-break:break-all}
+  .drop input{display:none}
+  .row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+  label.fld{display:block;font-size:12px;color:var(--muted);margin-bottom:4px;font-weight:500}
+  input[type=date],input[type=text]{border:1px solid var(--line);border-radius:8px;padding:7px 9px;font:inherit;background:#fff;color:var(--ink)}
+  input[type=date]:focus,input[type=text]:focus{outline:2px solid var(--naranja-suave);outline-offset:1px;border-color:var(--naranja)}
+  button{border:0;border-radius:99px;padding:10px 20px;font:600 14px/1 var(--sans);cursor:pointer;
+    background:var(--naranja);color:#fff;transition:.15s}
+  button:hover{background:var(--naranja-osc)}
+  button:disabled{background:var(--gris);cursor:not-allowed}
+  button.sec{background:var(--lavanda);color:var(--indigo)}
+  button.sec:hover{background:#D2D2F0}
+  .kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .kpi{background:var(--naranja-tenue);border:1px solid #FCE0D8;border-radius:10px;padding:12px 14px}
+  .kpi .l{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+  .kpi .v{font-size:19px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums;color:var(--naranja)}
+  .pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600}
+  .pill.ok{background:var(--ok-suave);color:var(--ok)}
+  .pill.warn{background:var(--warn-suave);color:var(--warn)}
+  .pill.bad{background:var(--bad-suave);color:var(--bad)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--indigo);font-weight:700;
+    position:sticky;top:0;background:var(--lavanda)}
+  tbody tr:hover{background:var(--naranja-tenue)}
+  tbody tr.alerta{background:#FFF7E2}
+  td.n{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--mono)}
+  .scroll{max-height:440px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .tabs button{background:var(--lavanda);color:var(--indigo);font-weight:600;padding:7px 14px;font-size:13px}
+  .tabs button:hover{background:#D2D2F0}
+  .tabs button.on{background:var(--indigo);color:#fff}
+  .tabs button.on:hover{background:var(--indigo)}
+  .aviso{padding:10px 13px;border-radius:9px;margin-bottom:7px;font-size:13px;border-left:4px solid transparent}
+  .aviso.ok{background:var(--ok-suave);color:var(--ok);border-left-color:var(--ok)}
+  .aviso.warn{background:var(--warn-suave);color:var(--warn);border-left-color:#D9A128}
+  .aviso.bad{background:var(--bad-suave);color:var(--bad);border-left-color:var(--bad)}
+  .aviso b{font-family:var(--mono);font-weight:600}
+  .aviso .det{display:block;margin-top:6px;font-size:12px;font-family:var(--mono);opacity:.9;max-height:120px;overflow:auto}
+  .hint{color:var(--muted);font-size:12.5px;margin-top:10px}
+  .muted{color:var(--muted)}
+  .hidden{display:none!important}
+  #cReglas details{border-top:1px solid var(--line)}
+  #cReglas details:last-of-type{border-bottom:1px solid var(--line)}
+  #cReglas summary{cursor:pointer;padding:11px 2px;font-weight:600;font-size:14.5px;list-style:none;
+    display:flex;align-items:center;gap:9px}
+  #cReglas summary::-webkit-details-marker{display:none}
+  #cReglas summary::before{content:"+";font-family:var(--mono);color:var(--naranja);font-weight:700;width:12px;flex:none}
+  #cReglas details[open] summary::before{content:"–"}
+  #cReglas summary:hover{color:var(--naranja)}
+  #cReglas .rc{padding:2px 0 16px 21px}
+  #cReglas .rc p,#cReglas .rc ul{max-width:78ch}
+  #cReglas .rc p{margin:0 0 10px;font-size:13.5px;line-height:1.6}
+  #cReglas .rc ul{margin:0 0 10px;padding-left:18px;font-size:13.5px;line-height:1.6}
+  #cReglas .rc li{margin-bottom:5px}
+  #cReglas .rc code{font-family:var(--mono);font-size:12px;background:var(--lavanda);color:var(--indigo);
+    padding:1px 5px;border-radius:4px}
+  #cReglas .nota-r{border-left:3px solid var(--naranja);background:var(--naranja-tenue);
+    padding:9px 13px;border-radius:0 7px 7px 0;margin:12px 0 0!important}
+  footer{margin-top:30px;color:var(--muted);font-size:12px;text-align:center}
+  @media (max-width:560px){
+    .wrap{padding:18px 16px 48px}
+    .banda{padding:20px 0 18px}
+    .banda h1{font-size:21px}
+  }
+</style>
+</head>
+<body>
+
+<div class="banda">
+  <div class="wrap">
+    <h1>Deuda Tu Delivery · Argentina</h1>
+    <div class="sub">Deuda fija y deuda viva — Comandarina SRL</div>
+    <p>Filtra de <b>todas las transacciones</b> lo que hay que facturar, resuelve la cuenta contra el
+       export de <b>Dash</b> y el contacto contra <b>Odoo</b>, y arma el extracto, la hoja de facturación
+       y la de import a Odoo.</p>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="card">
+    <h2>Qué estás facturando</h2>
+    <div class="tabs" id="modo">
+      <button data-m="fija" class="on">Deuda fija · semanal</button>
+      <button data-m="viva">Deuda viva · mensual</button>
+    </div>
+    <p class="sub" id="descModo" style="margin:2px 0 0"></p>
+  </div>
+
+  <div class="card">
+    <h2>Archivos</h2>
+    <div class="grid">
+      <label class="drop" id="d-tx">
+        <div class="t">Todas las transacciones</div>
+        <div class="d">MP → Informes → Transacciones. Trae el detalle de la venta y el ID de operación.</div>
+        <div class="f muted">Arrastrá o hacé clic</div>
+        <input type="file" data-k="tx" accept=".xlsx,.xls,.csv">
+      </label>
+      <label class="drop" id="d-mov" data-solo="fija">
+        <div class="t">Balance · movimientos</div>
+        <div class="d">MP → Informes → Liberaciones. Sólo se usa para la fecha de cada cobro.</div>
+        <div class="f muted">Arrastrá o hacé clic</div>
+        <input type="file" data-k="mov" accept=".xlsx,.xls,.csv">
+      </label>
+      <label class="drop" id="d-cta">
+        <div class="t">Cuentas de Dash</div>
+        <div class="d">El zip de reportes o el CSV de accounts. De acá salen el ID y el nombre de la cuenta.</div>
+        <div class="f muted">Arrastrá o hacé clic</div>
+        <input type="file" data-k="cta" accept=".zip,.csv,.xlsx,.xls">
+      </label>
+      <label class="drop" id="d-odoo">
+        <div class="t">Contactos de Odoo</div>
+        <div class="d">Export res.partner con Referencia, ID y responsabilidad de ARCA.</div>
+        <div class="f muted">Arrastrá o hacé clic</div>
+        <input type="file" data-k="odoo" accept=".xlsx,.xls,.csv">
+      </label>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <div>
+        <label class="fld" for="fecha">Fecha de factura</label>
+        <input type="date" id="fecha">
+      </div>
+      <div id="cajaPeriodo" class="hidden">
+        <label class="fld" for="periodo">Período que facturás</label>
+        <input type="text" id="periodo" placeholder="Agosto 2026" style="width:150px">
+      </div>
+      <button id="btn" disabled>Procesar</button>
+      <button id="limpiar" class="sec">Limpiar</button>
+      <div id="estado" class="sub" style="margin-left:4px"></div>
+    </div>
+    <p class="hint">Los archivos se leen en tu navegador. No se sube nada a ningún servidor.</p>
+  </div>
+
+  <div class="card hidden" id="cRes">
+    <h2>Resultado</h2>
+    <div class="kpis" id="kpis"></div>
+    <div id="avisos" style="margin-top:14px"></div>
+    <div class="tabs" id="tabs" style="margin-top:16px"></div>
+    <div class="scroll"><table id="tabla"></table></div>
+    <div class="row" style="margin-top:14px">
+      <button id="btnXlsx">Descargar Excel</button>
+      <span class="sub" id="pieTabla"></span>
+    </div>
+  </div>
+
+  <div class="card" id="cReglas">
+    <h2>Cómo lo calcula</h2>
+    <p class="sub" style="margin:-6px 0 14px">El criterio que aplica esta herramienta, para consultar sin salir de acá.</p>
+
+    <details open>
+      <summary>Los dos tipos de cobro de Tu Delivery</summary>
+      <div class="rc">
+        <p>Los dos pasan por Mercado Pago, pero son cosas distintas:</p>
+        <ul>
+          <li><b>Paid online · deuda viva.</b> Se van debitando las comisiones de cada transacción que el
+              comensal pagó con un medio de pago electrónico. Mercado Pago <b>no</b> nos cobra comisión por
+              ese movimiento. Como son muchos montos chicos repartidos en el mes, se suman por cuenta y se
+              factura <b>una vez por mes</b>.</li>
+          <li><b>Paid offline · deuda fija.</b> Son las comisiones que no se pudieron cobrar durante el mes
+              porque esas ventas se pagaron en efectivo. Se acumulan y el cliente las paga a mano, o se
+              adhiere a la suscripción automática desde la app web de Fudo. Acá Mercado Pago <b>sí</b> nos
+              cobra comisión por el movimiento. Se factura <b>una vez por semana</b>.</li>
+        </ul>
+        <p class="nota-r">Arriba de todo elegís cuál de las dos estás facturando. La deuda fija necesita el
+           balance (de ahí sale la fecha de cada cobro); la viva no.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Deuda viva · una vez por mes</summary>
+      <div class="rc">
+        <p>Son los descuentos chicos que se le van sacando a cada transacción cobrada por Mercado Pago.
+           Se toman las transacciones cuyo <code>NÚMERO DE IDENTIFICACIÓN</code> tiene la forma
+           <code>FUDO-&lt;ID de la cuenta&gt;-&lt;n&gt;</code> — las que en tu archivo marcás como
+           <i>Paid online</i> — y se suma el <code>VALOR DE LA COMPRA</code> de todo el mes por cuenta.
+           Las devoluciones entran con su signo, así que restan.</p>
+        <ul>
+          <li>Quedan afuera las <b>ventas de hardware</b>: se cobran con un identificador
+              <code>FUDO-</code> igual que las demás, pero el detalle dice <code>hardware</code> y no son
+              deuda viva. Te queda avisado en pantalla cuántas salteé.</li>
+          <li>Sale <b>una factura por cuenta</b>, no una por transacción.</li>
+          <li>Si dos IDs de Dash son la misma cuenta, se juntan en una sola factura y se usa el ID que
+              tenga contacto en Odoo. Te queda avisado en pantalla.</li>
+          <li>Las cuentas cuyo total da <b>cero</b> (porque las devoluciones compensan todo) no generan factura.</li>
+          <li>El período que va en «Términos y condiciones» y en la referencia de pago sale del mes de la
+              fecha de factura, y lo podés pisar con el campo de al lado.</li>
+        </ul>
+        <p class="nota-r">Para este circuito no hace falta el balance: la fecha es la que cargues arriba,
+           normalmente el último día del mes que estás facturando.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Qué filas son deuda fija</summary>
+      <div class="rc">
+        <p>De todas las transacciones se toman únicamente las que en <code>DETALLE DE LA VENTA</code> dicen:</p>
+        <ul>
+          <li><code>Deuda por comisiones</code> — las comisiones que se le fueron acumulando al cliente y no se cobraron por Mercado Pago.</li>
+          <li><code>Suscripción Tu delivery - Fudo</code> — el abono de Tu Delivery cobrado offline.</li>
+        </ul>
+        <p>Todo lo demás (compras, abonos del SaaS, transacciones comunes) queda afuera.</p>
+        <p class="nota-r">La deuda viva no entra acá: son los descuentos chicos de cada transacción cobrada
+           por Mercado Pago, que se facturan una vez por mes sumados por cuenta.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Cómo se identifica la cuenta</summary>
+      <div class="rc">
+        <p>El <code>NÚMERO DE IDENTIFICACIÓN</code> viene de dos formas distintas según el caso:</p>
+        <ul>
+          <li><code>admin@nombredelacuenta</code> → se toma lo que está después de la arroba y se busca ese
+              nombre en el export de cuentas de Dash. Primero busca el nombre tal cual (sin distinguir
+              mayúsculas) y, si no aparece, ignorando espacios y signos. Así <code>hungry's</code> cae en
+              «Hungry's» y no en «Hungrys».</li>
+          <li><code>232095::19425::1::fee_payment</code> → el ID de la cuenta es el primer número, no hace
+              falta buscarlo.</li>
+        </ul>
+        <p>Con el ID de Dash se busca el contacto en Odoo por <code>Referencia</code>, y de ahí salen el
+           ID de contacto y la responsabilidad frente a ARCA.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>De dónde sale la fecha</summary>
+      <div class="rc">
+        <p>Del balance. Para cada transacción se busca en los movimientos el que tenga la misma
+           <code>Operación Relacionada</code> que el ID de operación de Mercado Pago, y se usa la fecha del
+           movimiento de tipo <code>Cobro</code>. Si esa operación no tiene «Cobro» se toma el primer
+           movimiento que aparezca.</p>
+        <p>Suele caer un día después de la fecha de origen de la transacción, porque Mercado Pago liquida
+           el cobro al día siguiente. Si la operación no está en el balance, la fila queda marcada en
+           amarillo y sin fecha.</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>Contracargos</summary>
+      <div class="rc">
+        <p>Las filas cuyo <code>TIPO DE OPERACIÓN</code> no es <code>SETTLEMENT</code> van al extracto pero
+           no a la hoja de facturación:</p>
+        <ul>
+          <li><code>CHARGEBACK</code> → «Contracargo en contra - Deuda Fija - <i>cuenta</i>», con importe negativo.</li>
+          <li><code>CHARGEBACK_CANCEL</code> → «Contracargo a Favor - Deuda Fija - <i>cuenta</i>».</li>
+        </ul>
+      </div>
+    </details>
+
+    <details>
+      <summary>Qué trae cada hoja</summary>
+      <div class="rc">
+        <ul>
+          <li><b>DF</b> — las filas de transacciones que entraron, con el ID y el nombre de cuenta
+              resueltos y las dos fechas. Es la hoja de control.</li>
+          <li><b>Extracto Odoo</b> — Fecha, Descripción, Contacto, Referencia, Importe e ID dash.</li>
+          <li><b>Facturación Completo</b> — con la fecha de factura que cargues arriba, el importe sin
+              IVA (total ÷ 1,21), los términos fijos «Deuda Fija - Tienda Online» y la nota interna
+              <code>&lt;ID dash&gt;/TO/DF</code>.</li>
+          <li><b>Import Odoo - T.O FIJA</b> — la misma información pero con las 21 columnas del import,
+              lista para copiar a tu archivo. El tipo de documento sale de la responsabilidad frente a
+              ARCA (<code>FACTURAS A</code> para Responsable Inscripto y Monotributo,
+              <code>FACTURAS B</code> para Consumidor Final y Sujeto Exento), el período de servicio es el
+              mes completo de la fecha de factura, y la columna <code>validación</code> trae tu fórmula
+              <code>+N*P*(1-(R/100))*1,21</code> para que compares contra el importe original.</li>
+        </ul>
+        <p class="nota-r">Lo que la herramienta no pueda resolver queda en amarillo en el Excel y avisado
+           arriba, así se ve de un vistazo qué hay que completar a mano.</p>
+        <p>Además, los dos circuitos bajan una hoja <b>Control</b> con el cuadre: de cuántas filas se
+           partió, cuáles entraron y por qué, y los totales de cada hoja como fórmula viva, con una línea
+           final que tiene que dar cero. En deuda viva la hoja <b>Deuda Viva</b> guarda el detalle
+           transacción por transacción: filtrá por <code>Cuenta</code> y te da el importe de la factura.
+           La tabla por cuenta de la hoja Control lo recalcula sola con un <code>SUMIF</code> contra ese
+           detalle, así que si borrás o agregás filas el control se mueve con vos.</p>
+      </div>
+    </details>
+  </div>
+
+  <footer>Hecho para Fudo · procesa todo en tu navegador</footer>
+</div>
+
+<script>
+/* ============================================================================
+   Deuda Fija · Tu Delivery Argentina
+   Núcleo de cálculo. Recibe arrays de objetos (una fila por registro, las claves
+   son los encabezados del archivo) y devuelve las filas listas para escribir.
+   ========================================================================== */
+(function (raiz) {
+  'use strict';
+
+  function txt(v){ return v === null || v === undefined ? '' : String(v).trim(); }
+  function num(v){
+    if (typeof v === 'number') return isFinite(v) ? v : 0;
+    const s = txt(v).replace(/\s/g,'').replace(/[^0-9,.\-]/g,'');
+    if (!s) return 0;
+    // formato del reporte: punto decimal. Si hay coma y no punto, la coma es decimal.
+    const n = s.indexOf(',') >= 0 && s.indexOf('.') < 0 ? Number(s.replace(',','.')) : Number(s.replace(/,/g,''));
+    return isFinite(n) ? n : 0;
+  }
+  function normClave(k){
+    return txt(k).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,'');
+  }
+  // Devuelve { canonico: nombreRealDeLaColumna } tolerando tildes, mayúsculas y espacios.
+  function mapearColumnas(filas, canonicos){
+    const mapa = {};
+    if (!filas || !filas.length) return mapa;
+    const reales = Object.keys(filas[0]);
+    const porNorm = {};
+    reales.forEach(r => { porNorm[normClave(r)] = r; });
+    Object.keys(canonicos).forEach(c => {
+      for (const alias of canonicos[c]) {
+        const k = normClave(alias);
+        if (porNorm[k]) { mapa[c] = porNorm[k]; return; }
+      }
+      // segundo intento: que el encabezado empiece igual
+      for (const alias of canonicos[c]) {
+        const k = normClave(alias);
+        const hit = reales.find(r => normClave(r).indexOf(k) === 0);
+        if (hit) { mapa[c] = hit; return; }
+      }
+    });
+    return mapa;
+  }
+
+  const COLS_TX = {
+    identificacion: ['NÚMERO DE IDENTIFICACIÓN','NUMERO DE IDENTIFICACION'],
+    operacion:      ['ID DE OPERACIÓN EN MERCADO PAGO','ID DE OPERACION EN MERCADO PAGO'],
+    tipo:           ['TIPO DE OPERACIÓN','TIPO DE OPERACION'],
+    valor:          ['VALOR DE LA COMPRA'],
+    origen:         ['FECHA DE ORIGEN'],
+    detalle:        ['DETALLE DE LA VENTA']
+  };
+  const COLS_MOV = {
+    fecha:    ['Fecha de Pago','Fecha'],
+    tipo:     ['Tipo de Operación','Tipo de Operacion'],
+    relacion: ['Operación Relacionada','Operacion Relacionada'],
+    importe:  ['Importe']
+  };
+  const COLS_CTA = { id:['ID'], nombre:['Nombre'] };
+  const COLS_ODOO = {
+    referencia: ['Referencia'],
+    id:         ['ID'],
+    nombre:     ['Nombre'],
+    condicion:  ['Tipo de responsabilidad de ARCA','Tipo de Responsabilidad AFIP','Tipo de responsabilidad de AFIP']
+  };
+
+  // Tipo de documento, diario e impuesto según la responsabilidad frente a ARCA.
+  // Es la misma tabla que usa el procesador de facturación de regulares.
+  const COND = {
+    'Responsable Monotributo':      ['FACTURAS A', 'Factura electrónica', 'IVA 21%'],
+    'IVA Responsable Inscripto':    ['FACTURAS A', 'Factura electrónica', 'IVA 21%'],
+    'Consumidor Final':             ['FACTURAS B', 'Factura electrónica', 'IVA 21%'],
+    'IVA Sujeto Exento':            ['FACTURAS B', 'Factura electrónica', 'IVA 21%'],
+    'IVA Liberado – Ley Nº 19.640': ['FACTURAS DE EXPORTACION', 'Comprobantes de exportación', 'IVA Exento']
+  };
+  function buscarCond(c){
+    const k = normClave(c);
+    for (const n in COND) if (normClave(n) === k) return COND[n];
+    return null;
+  }
+
+  // Las dos leyendas que marcan deuda fija en el reporte de transacciones.
+  const ES_DEUDA = d => /deuda por comisiones/i.test(d) || /suscripci[oó]n\s+tu\s+delivery/i.test(d);
+  // Las ventas de hardware también se cobran con un identificador FUDO-, así que
+  // no son deuda viva aunque el identificador tenga la misma forma.
+  const ES_HARDWARE = d => /hardware/i.test(d);
+  const LIMPIAR = s => txt(s).replace(/^"+|"+$/g,'').replace(/""/g,'"').trim();
+
+  // Fechas: los reportes traen ISO ("2026-09-27T12:39:44Z" o con huso). Nos quedamos
+  // con la parte de la fecha tal cual viene: el balance ya está en hora argentina.
+  function soloFecha(v){
+    if (v instanceof Date) return v.toISOString().slice(0,10);
+    if (typeof v === 'number' && v > 20000) {           // serial de Excel
+      const ms = Math.round((v - 25569) * 86400000);
+      return new Date(ms).toISOString().slice(0,10);
+    }
+    const s = txt(v);
+    const m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return m[1] + '-' + m[2] + '-' + m[3];
+    const d = s.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+    if (d) return d[3] + '-' + d[2] + '-' + d[1];
+    return '';
+  }
+  function aDate(iso){
+    if (!iso) return null;
+    const p = iso.split('-');
+    return new Date(Date.UTC(+p[0], +p[1]-1, +p[2]));
+  }
+
+  const bajo = s => txt(s).toLowerCase();
+  const suelto = s => normClave(s);
+
+  function procesar(entrada){
+    const avisos = [];
+    const aviso = (tipo, msg, extra) => avisos.push({ tipo: tipo, msg: msg, extra: extra || null });
+
+    const cT = mapearColumnas(entrada.tx, COLS_TX);
+    const cM = mapearColumnas(entrada.mov, COLS_MOV);
+    const cC = mapearColumnas(entrada.cuentas, COLS_CTA);
+    const cO = mapearColumnas(entrada.odoo, COLS_ODOO);
+
+    ['identificacion','operacion','tipo','valor','detalle'].forEach(k => {
+      if (!cT[k]) aviso('bad', 'Al archivo de transacciones le falta la columna «' + COLS_TX[k][0] + '».');
+    });
+    if (entrada.modo !== 'viva' && (!cM.relacion || !cM.fecha))
+      aviso('bad', 'Al balance le falta «Operación Relacionada» o «Fecha de Pago».');
+    if (!cC.id || !cC.nombre) aviso('bad', 'Al export de cuentas de Dash le falta «ID» o «Nombre».');
+    if (!cO.referencia || !cO.id) aviso('bad', 'Al export de Odoo le falta «Referencia» o «ID».');
+
+    /* ---------- índices ---------- */
+    // cuentas de Dash: por nombre exacto y por nombre "suelto" (sin espacios ni signos)
+    const ctaPorId = {}, ctaExacto = {}, ctaSuelto = {};
+    (entrada.cuentas || []).forEach(a => {
+      const id = txt(a[cC.id]), nom = txt(a[cC.nombre]);
+      if (!id) return;
+      if (!ctaPorId[id]) ctaPorId[id] = a;
+      (ctaExacto[bajo(nom)] = ctaExacto[bajo(nom)] || []).push(a);
+      (ctaSuelto[suelto(nom)] = ctaSuelto[suelto(nom)] || []).push(a);
+    });
+    // contactos de Odoo por Referencia (que es el ID de Dash)
+    const odooPorRef = {};
+    (entrada.odoo || []).forEach(o => {
+      const r = txt(o[cO.referencia]);
+      if (r && !odooPorRef[r]) odooPorRef[r] = o;
+    });
+    // movimientos del balance por operación relacionada
+    const movPorOp = {};
+    (entrada.mov || []).forEach(m => {
+      const r = txt(m[cM.relacion]);
+      if (!r) return;
+      (movPorOp[r] = movPorOp[r] || []).push(m);
+    });
+
+    function fechaDeOperacion(op){
+      const lista = movPorOp[op];
+      if (!lista || !lista.length) return '';
+      const cobro = cM.tipo ? lista.find(m => /^cobro$/i.test(txt(m[cM.tipo]))) : null;
+      return soloFecha((cobro || lista[0])[cM.fecha]);
+    }
+    function cuentaPorNombre(nombre){
+      const e = ctaExacto[bajo(nombre)];
+      if (e && e.length) return { cta: e[0], dudosa: e.length > 1 };
+      const s = ctaSuelto[suelto(nombre)];
+      if (s && s.length) return { cta: s[0], dudosa: s.length > 1 };
+      return null;
+    }
+
+    /* ================= DEUDA VIVA =================
+       Las transacciones cobradas por Mercado Pago: el identificador es
+       FUDO-<idDash>-<n> y el detalle «Compra <cuenta>». Se suma VALOR DE LA COMPRA
+       por cuenta (los REFUND restan) y sale una factura por cuenta al mes. */
+    if (entrada.modo === 'viva') {
+      const porCuenta = {}, sinCtaV = [], sinOdooV = [], condRaraV = [], juntadas = [], enCero = [];
+
+      // Primera pasada: el nombre de cada ID. Lo bueno es el del export de Dash; si el
+      // ID no está ahí, uso el que trae el propio detalle («Compra <cuenta>»), quedándome
+      // con el que más se repite para que una fila suelta no arme una cuenta aparte.
+      const propuestas = {}, deTx = [];
+      let hardware = 0;
+      (entrada.tx || []).forEach(t => {
+        const ident = txt(t[cT.identificacion]);
+        const m = ident.match(/^FUDO-(\d+)-/i);
+        if (!m) return;
+        if (ES_HARDWARE(LIMPIAR(t[cT.detalle]))) { hardware++; return; }
+        const id = m[1];
+        deTx.push({ t: t, id: id, ident: ident });
+        if (ctaPorId[id]) return;
+        const desde = LIMPIAR(t[cT.detalle]).replace(/^compra\s+/i, '').trim();
+        if (!desde) return;
+        const c = propuestas[id] || (propuestas[id] = {});
+        c[desde] = (c[desde] || 0) + 1;
+      });
+      const nombreDe = {};
+      deTx.forEach(x => {
+        if (nombreDe[x.id] !== undefined) return;
+        const a = ctaPorId[x.id];
+        if (a) { nombreDe[x.id] = txt(a[cC.nombre]); return; }
+        const c = propuestas[x.id] || {};
+        const mejor = Object.keys(c).sort((p, q) => c[q] - c[p])[0] || '';
+        nombreDe[x.id] = mejor;
+        sinCtaV.push({ id: x.id, nombre: mejor || '(sin nombre)', origen: 'nombre tomado del detalle' });
+      });
+
+      deTx.forEach(x => {
+        const nombre = nombreDe[x.id];
+        // la clave junta los IDs que son la misma cuenta, como los facturás vos
+        const clave = nombre ? suelto(nombre) : 'id:' + x.id;
+        const g = porCuenta[clave] || (porCuenta[clave] = {
+          cuenta: nombre || x.id, ids: [], importe: 0, movs: 0,
+          cobros: 0, devoluciones: 0, nCobros: 0, nDevoluciones: 0, detalle: []
+        });
+        if (g.ids.indexOf(x.id) < 0) g.ids.push(x.id);
+        const v = num(x.t[cT.valor]);
+        const tipo = txt(x.t[cT.tipo]).toUpperCase();
+        g.importe += v;
+        g.movs++;
+        if (tipo === 'REFUND' || v < 0) { g.devoluciones += v; g.nDevoluciones++; }
+        else { g.cobros += v; g.nCobros++; }
+        // el detalle que respalda cada factura, para poder rastrear el importe
+        g.detalle.push({
+          ident: x.ident, operacion: txt(x.t[cT.operacion]), tipo: tipo,
+          venta: LIMPIAR(x.t[cT.detalle]), origen: soloFecha(cT.origen ? x.t[cT.origen] : ''),
+          idDash: x.id, importe: v
+        });
+      });
+
+      const grupos = [], todos = [];
+      Object.keys(porCuenta).forEach(k => {
+        const g = porCuenta[k];
+        g.importe = Math.round(g.importe * 100) / 100;
+        g.cobros = Math.round(g.cobros * 100) / 100;
+        g.devoluciones = Math.round(g.devoluciones * 100) / 100;
+        todos.push(g);
+        // cuando una cuenta tiene varios IDs, el bueno es el que tiene contacto en Odoo
+        const conOdoo = g.ids.filter(id => odooPorRef[id]);
+        g.idDash = conOdoo[0] || g.ids[0];
+        if (g.ids.length > 1) juntadas.push({ cuenta: g.cuenta, ids: g.ids.join(' + '), factura: g.idDash, importe: g.importe });
+        if (!g.importe) { enCero.push({ cuenta: g.cuenta, id: g.idDash, movs: g.movs }); return; }
+        const o = odooPorRef[g.idDash];
+        if (!o) sinOdooV.push({ cuenta: g.cuenta, id: g.idDash, importe: g.importe });
+        g.contacto = o ? txt(o[cO.id]) : '';
+        g.condicion = o && cO.condicion ? txt(o[cO.condicion]) : '';
+        const regla = buscarCond(g.condicion);
+        if (g.condicion && !regla) condRaraV.push({ cuenta: g.cuenta, id: g.idDash, condicion: g.condicion });
+        g.tipoDoc = regla ? regla[0] : '';
+        g.diario = regla ? regla[1] : '';
+        g.impuesto = regla ? regla[2] : '';
+        grupos.push(g);
+      });
+      grupos.sort((a, b) => b.importe - a.importe);
+
+      if (!grupos.length)
+        aviso('warn', 'No encontré transacciones cobradas por Mercado Pago en el archivo. Fijate que sea el reporte de todas las transacciones del mes.');
+      if (hardware)
+        aviso('ok', hardware + ' transacción(es) de venta de hardware: tienen identificador FUDO- pero no son deuda viva, así que quedan afuera.');
+      if (sinCtaV.length)
+        aviso('warn', sinCtaV.length + ' cuenta(s) que no están en el export de Dash: les puse el nombre que trae el detalle de la transacción.', sinCtaV);
+      if (juntadas.length)
+        aviso('ok', juntadas.length + ' cuenta(s) con más de un ID de Dash: las junté en una sola factura, como las facturás vos.', juntadas);
+      if (enCero.length)
+        aviso('ok', enCero.length + ' cuenta(s) quedaron en cero (devoluciones que compensan todo): no generan factura.', enCero);
+      if (sinOdooV.length)
+        aviso('warn', sinOdooV.length + ' cuenta(s) sin contacto en Odoo: van en amarillo, hay que crear el contacto.', sinOdooV);
+      if (condRaraV.length)
+        aviso('warn', condRaraV.length + ' cuenta(s) con una responsabilidad frente a ARCA que no tengo en la tabla: quedan sin tipo de documento ni diario.', condRaraV);
+
+      todos.sort((a, b) => b.importe - a.importe);
+      return {
+        modo: 'viva',
+        grupos: grupos,
+        todos: todos,
+        filas: [], aFacturar: [],
+        avisos: avisos,
+        control: {
+          transacciones: (entrada.tx || []).length,
+          movimientos: todos.reduce((a, g) => a + g.movs, 0),
+          nCobros: todos.reduce((a, g) => a + g.nCobros, 0),
+          nDevoluciones: todos.reduce((a, g) => a + g.nDevoluciones, 0),
+          sumaCobros: Math.round(todos.reduce((a, g) => a + g.cobros, 0) * 100) / 100,
+          sumaDevoluciones: Math.round(todos.reduce((a, g) => a + g.devoluciones, 0) * 100) / 100,
+          cuentas: todos.length,
+          aFacturar: grupos.length,
+          enCero: enCero.length,
+          total: Math.round(grupos.reduce((a, g) => a + g.importe, 0) * 100) / 100
+        }
+      };
+    }
+
+    /* ================= DEUDA FIJA ================= */
+    const sinCuenta = [], cuentaDudosa = [], sinOdoo = [], sinFecha = [], contracargos = [], condRara = [];
+    const filas = [];
+
+    (entrada.tx || []).forEach(t => {
+      const detalle = LIMPIAR(t[cT.detalle]);
+      if (!ES_DEUDA(detalle)) return;
+
+      const ident = txt(t[cT.identificacion]);
+      const op    = txt(t[cT.operacion]);
+      const tipo  = txt(t[cT.tipo]).toUpperCase();
+      const valor = num(t[cT.valor]);
+      const origen = soloFecha(cT.origen ? t[cT.origen] : '');
+
+      let idDash = '', nombreCta = '', clave = '', dudosa = false;
+      if (ident.indexOf('@') >= 0) {
+        clave = ident.slice(ident.lastIndexOf('@') + 1);
+        const hit = cuentaPorNombre(clave);
+        if (hit) { idDash = txt(hit.cta[cC.id]); nombreCta = txt(hit.cta[cC.nombre]); dudosa = hit.dudosa; }
+        else sinCuenta.push({ ident: ident, op: op, importe: valor });
+      } else {
+        clave = ident.split('::')[0];
+        idDash = txt(clave);
+        const a = ctaPorId[idDash];
+        if (a) nombreCta = txt(a[cC.nombre]);
+        else sinCuenta.push({ ident: ident, op: op, importe: valor });
+      }
+      if (dudosa) cuentaDudosa.push({ ident: ident, cuenta: nombreCta, id: idDash });
+
+      const o = idDash ? odooPorRef[idDash] : null;
+      if (idDash && !o) sinOdoo.push({ cuenta: nombreCta || clave, id: idDash, op: op });
+
+      const fecha = fechaDeOperacion(op);
+      if (!fecha) sinFecha.push({ cuenta: nombreCta || clave, op: op, importe: valor });
+
+      const esSettlement = tipo === 'SETTLEMENT';
+      if (!esSettlement) contracargos.push({ cuenta: nombreCta || clave, op: op, tipo: tipo, importe: valor });
+
+      const prefijo = tipo === 'CHARGEBACK' ? 'Contracargo en contra - '
+                    : tipo === 'CHARGEBACK_CANCEL' ? 'Contracargo a Favor - ' : '';
+      const descripcion = prefijo + 'Deuda Fija - ' + (nombreCta || clave);
+
+      const condicion = o && cO.condicion ? txt(o[cO.condicion]) : '';
+      const reglaCond = buscarCond(condicion);
+      if (esSettlement && condicion && !reglaCond)
+        condRara.push({ cuenta: nombreCta || clave, id: idDash, condicion: condicion });
+
+      filas.push({
+        cruda: t,
+        ident: ident, operacion: op, tipo: tipo, detalle: detalle,
+        origen: origen, fecha: fecha,
+        idDash: idDash, cuenta: nombreCta || clave, cuentaDudosa: dudosa,
+        contacto: o ? txt(o[cO.id]) : '',
+        rzOdoo: o && cO.nombre ? txt(o[cO.nombre]) : '',
+        condicion: condicion,
+        tipoDoc: reglaCond ? reglaCond[0] : '',
+        diario: reglaCond ? reglaCond[1] : '',
+        impuesto: reglaCond ? reglaCond[2] : '',
+        descripcion: descripcion,
+        importe: valor,
+        factura: esSettlement
+      });
+    });
+
+    filas.sort((a, b) => (a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0));
+
+    if (!filas.length)
+      aviso('warn', 'No encontré ninguna transacción de deuda fija en el archivo. Fijate que sea el reporte de todas las transacciones del período.');
+    if (sinCuenta.length)
+      aviso('warn', sinCuenta.length + ' fila(s) cuya cuenta no está en el export de Dash: quedan sin ID ni contacto, en amarillo.', sinCuenta);
+    if (cuentaDudosa.length)
+      aviso('warn', cuentaDudosa.length + ' fila(s) donde hay más de una cuenta de Dash con ese nombre: me quedé con una, conviene revisarla.', cuentaDudosa);
+    if (sinOdoo.length)
+      aviso('warn', sinOdoo.length + ' fila(s) sin contacto en Odoo para ese ID de Dash: van en amarillo, hay que crear el contacto.', sinOdoo);
+    if (sinFecha.length)
+      aviso('warn', sinFecha.length + ' fila(s) cuya operación no aparece en el balance: quedan sin fecha, en amarillo.', sinFecha);
+    if (condRara.length)
+      aviso('warn', condRara.length + ' fila(s) con una responsabilidad frente a ARCA que no tengo en la tabla: quedan sin tipo de documento ni diario, en amarillo.', condRara);
+    if (contracargos.length)
+      aviso('ok', contracargos.length + ' contracargo(s): van al extracto pero no a la hoja de facturación.', contracargos);
+
+    const aFacturar = filas.filter(f => f.factura);
+    return {
+      modo: 'fija',
+      grupos: [],
+      filas: filas,
+      aFacturar: aFacturar,
+      avisos: avisos,
+      control: {
+        transacciones: (entrada.tx || []).length,
+        deudaFija: filas.length,
+        comisiones: filas.filter(f => /deuda por comisiones/i.test(f.detalle)).length,
+        suscripciones: filas.filter(f => !/deuda por comisiones/i.test(f.detalle)).length,
+        contracargos: contracargos.length,
+        aFacturar: aFacturar.length,
+        total: Math.round(aFacturar.reduce((a, f) => a + f.importe, 0) * 100) / 100,
+        sinResolver: sinCuenta.length + sinOdoo.length + sinFecha.length
+      }
+    };
+  }
+
+  raiz.DFCore = { procesar: procesar, helpers: { txt: txt, num: num, soloFecha: soloFecha, aDate: aDate,
+    normClave: normClave, mapearColumnas: mapearColumnas, ES_DEUDA: ES_DEUDA } };
+})(window);
+
+/* ================= UI ================= */
+const $ = s => document.querySelector(s);
+const archivos = {}, datos = {};
+let resultado = null, pestania = 'ctrl', modo = 'fija';
+
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DESC_MODO = {
+  fija: 'Paid offline · las comisiones de las ventas que se pagaron en efectivo, que el cliente paga a mano o por suscripción. Una factura por operación, con la fecha que trae el balance.',
+  viva: 'Paid online · las comisiones que se van debitando de cada transacción pagada con medio electrónico. Una factura por cuenta con el total del mes; el balance no hace falta.'
+};
+function cambiarModo(m){
+  modo = m;
+  pestania = 'ctrl';
+  resultado = null;
+  $('#cRes').classList.add('hidden');
+  $('#descModo').textContent = DESC_MODO[m];
+  document.querySelectorAll('#modo button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  document.querySelectorAll('.drop[data-solo]').forEach(z => z.classList.toggle('hidden', z.dataset.solo !== m));
+  $('#cajaPeriodo').classList.toggle('hidden', m !== 'viva');
+  revisarListo();
+}
+document.querySelectorAll('#modo button').forEach(b =>
+  b.addEventListener('click', () => cambiarModo(b.dataset.m)));
+
+const fmt = n => (Number(n)||0).toLocaleString('es-AR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+const fmtEnt = n => (Number(n)||0).toLocaleString('es-AR');
+const esc = s => String(s === null || s === undefined ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ---------- lectura de archivos ---------- */
+function contarSep(linea, sep){
+  let n = 0, comillas = false;
+  for (let i = 0; i < linea.length; i++){
+    const c = linea[i];
+    if (c === '"') { comillas = !comillas; continue; }
+    if (!comillas && c === sep) n++;
+  }
+  return n;
+}
+// Los reportes de Dash arrancan con líneas de filtros antes del encabezado real, y
+// según de dónde salgan vienen con coma, punto y coma o tabulación. El encabezado es
+// la primera línea con más columnas.
+function csvAJson(texto){
+  const lineas = texto.replace(/^﻿/,'').split(/\r?\n/);
+  const muestra = lineas.slice(0, 30);
+  let sep = ',', mejor = 0, fila = 0;
+  [',', ';', '\t'].forEach(s => {
+    muestra.forEach((l, i) => {
+      const n = contarSep(l, s);
+      if (n > mejor) { mejor = n; sep = s; fila = i; }
+    });
+  });
+  if (mejor < 1) { sep = ','; fila = 0; }
+  const wb = XLSX.read(lineas.slice(fila).join('\n'), { type:'string', raw:true, FS:sep });
+  return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'', raw:true });
+}
+function hojaAJson(buf, nombre){
+  if (/\.csv$/i.test(nombre)) return csvAJson(new TextDecoder('utf-8').decode(buf));
+  const wb = XLSX.read(buf, { type:'array', raw:true });
+  return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval:'', raw:true });
+}
+async function leerArchivo(file){
+  const buf = await file.arrayBuffer();
+  if (/\.zip$/i.test(file.name)) {
+    if (typeof JSZip === 'undefined') throw new Error('no pude abrir el zip, falta la librería');
+    const zip = await JSZip.loadAsync(buf);
+    const todos = Object.keys(zip.files).filter(n => !zip.files[n].dir && /\.csv$/i.test(n));
+    const elegido = todos.find(n => /accounts/i.test(n)) || todos[0];
+    if (!elegido) throw new Error('el zip no trae ningún CSV');
+    return csvAJson(await zip.files[elegido].async('string'));
+  }
+  return hojaAJson(new Uint8Array(buf), file.name);
+}
+
+document.querySelectorAll('.drop').forEach(zona => {
+  const input = zona.querySelector('input');
+  const clave = input.dataset.k;
+  const marcar = f => {
+    archivos[clave] = f;
+    zona.classList.add('ok');
+    const et = zona.querySelector('.f');
+    et.textContent = f.name;
+    et.classList.remove('muted');
+    cargar(clave, f);
+  };
+  input.addEventListener('change', e => { if (e.target.files[0]) marcar(e.target.files[0]); });
+  ['dragenter','dragover'].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.add('over'); }));
+  ['dragleave','drop'].forEach(ev => zona.addEventListener(ev, e => { e.preventDefault(); zona.classList.remove('over'); }));
+  zona.addEventListener('drop', e => { if (e.dataTransfer.files[0]) marcar(e.dataTransfer.files[0]); });
+});
+
+let cargando = 0;
+async function cargar(clave, file){
+  cargando++;
+  datos[clave] = null;
+  revisarListo();
+  const zona = $('#d-' + clave), etiqueta = zona.querySelector('.f');
+  etiqueta.textContent = file.name + ' · leyendo…';
+  $('#estado').textContent = 'Leyendo ' + file.name + '…';
+  try {
+    datos[clave] = await leerArchivo(file);
+    etiqueta.textContent = file.name + ' · ' + datos[clave].length.toLocaleString('es-AR') + ' filas';
+    if (clave === 'mov') sugerirFecha();
+  } catch(err){
+    zona.classList.remove('ok');
+    etiqueta.textContent = file.name;
+    $('#estado').innerHTML = '<span class="pill bad">No pude leer ' + esc(file.name) + ': ' + esc(err.message) + '</span>';
+  } finally {
+    cargando--;
+    if (!cargando && $('#estado').innerHTML.indexOf('pill bad') < 0) $('#estado').textContent = '';
+    revisarListo();
+  }
+}
+function sugerirFecha(){
+  if ($('#fecha').value) return;
+  const f = datos.mov.map(m => DFCore.helpers.soloFecha(m['Fecha de Pago'] || m['Fecha'])).filter(Boolean).sort();
+  if (f.length) $('#fecha').value = f[f.length-1];
+}
+function revisarListo(){
+  const base = datos.tx && datos.cta && datos.odoo;
+  $('#btn').disabled = !(base && (modo === 'viva' || datos.mov)) || cargando > 0;
+}
+// El período que va en «Términos y condiciones» sale del mes de la fecha de factura.
+function periodoDe(iso){
+  const d = DFCore.helpers.aDate(iso);
+  return d ? MESES[d.getUTCMonth()] + ' ' + d.getUTCFullYear() : '';
+}
+function periodoActual(){
+  return ($('#periodo').value || '').trim() || periodoDe($('#fecha').value || '');
+}
+$('#fecha').addEventListener('change', () => { $('#periodo').placeholder = periodoDe($('#fecha').value) || 'Agosto 2026'; });
+$('#limpiar').addEventListener('click', () => location.reload());
+
+$('#btn').addEventListener('click', () => {
+  $('#estado').textContent = 'Procesando…';
+  setTimeout(() => {
+    try {
+      resultado = DFCore.procesar({ modo: modo, tx: datos.tx, mov: datos.mov, cuentas: datos.cta, odoo: datos.odoo });
+      pintar();
+      $('#estado').textContent = '';
+      $('#cRes').classList.remove('hidden');
+      $('#cRes').scrollIntoView({ behavior:'smooth', block:'start' });
+    } catch(err){
+      $('#estado').innerHTML = '<span class="pill bad">' + esc(err.message) + '</span>';
+      throw err;
+    }
+  }, 30);
+});
+
+function pintar(){
+  const c = resultado.control;
+  const kpis = resultado.modo === 'viva'
+    ? [['Transacciones leídas', fmtEnt(c.transacciones)],
+       ['Cobradas por MP', fmtEnt(c.movimientos)],
+       ['Cuentas', fmtEnt(c.cuentas)],
+       ['Facturas', fmtEnt(c.aFacturar)],
+       ['Quedaron en cero', fmtEnt(c.enCero)],
+       ['Total a facturar', '$ ' + fmt(c.total)]]
+    : [['Transacciones leídas', fmtEnt(c.transacciones)],
+       ['Deuda fija', fmtEnt(c.deudaFija)],
+       ['Por comisiones', fmtEnt(c.comisiones)],
+       ['Suscripciones', fmtEnt(c.suscripciones)],
+       ['A facturar', fmtEnt(c.aFacturar)],
+       ['Total a facturar', '$ ' + fmt(c.total)]];
+  $('#kpis').innerHTML = kpis
+    .map(([l, v]) => '<div class="kpi"><div class="l">' + l + '</div><div class="v">' + v + '</div></div>').join('');
+
+  $('#avisos').innerHTML = resultado.avisos.map(a => {
+    const det = a.extra && a.extra.length
+      ? '<span class="det">' + a.extra.slice(0, 40).map(x => esc(Object.values(x).join(' · '))).join('<br>') +
+        (a.extra.length > 40 ? '<br>… y ' + (a.extra.length - 40) + ' más' : '') + '</span>'
+      : '';
+    return '<div class="aviso ' + a.tipo + '">' + esc(a.msg) + det + '</div>';
+  }).join('');
+
+  const tabs = resultado.modo === 'viva'
+    ? [['ctrl','Control'], ['extracto','Extracto Odoo'], ['fact','Facturación Completo'], ['imp','Import Odoo · T.O VIVA']]
+    : [['ctrl','Control'], ['df','Deuda Fija · detalle'], ['extracto','Extracto Odoo'],
+       ['fact','Facturación Completo'], ['imp','Import Odoo · T.O FIJA']];
+  if (!tabs.some(t => t[0] === pestania)) pestania = 'ctrl';
+  $('#tabs').innerHTML = tabs.map(([k, t]) => {
+    const n = k === 'ctrl' ? '' :
+      ' <span style="opacity:.75">' +
+      (resultado.modo === 'viva' ? c.aFacturar : (k === 'fact' || k === 'imp' ? c.aFacturar : c.deudaFija)) +
+      '</span>';
+    return '<button data-t="' + k + '" class="' + (k === pestania ? 'on' : '') + '">' + t + n + '</button>';
+  }).join('');
+  $('#tabs').querySelectorAll('button').forEach(b =>
+    b.addEventListener('click', () => { pestania = b.dataset.t; pintar(); }));
+
+  pintarTabla();
+}
+
+// El mismo cuadre que va a la hoja Control, para verlo antes de bajar el Excel.
+function pintarCuadre(){
+  const c = resultado.control;
+  let filas;
+  if (resultado.modo === 'viva') {
+    const t = resultado.todos;
+    filas = [
+      ['h', 'De dónde salen las filas', 'Filas', 'Importe'],
+      ['', 'Transacciones leídas del reporte', fmtEnt(c.transacciones), ''],
+      ['', '· Cobradas por Mercado Pago (FUDO-…)', fmtEnt(c.movimientos), ''],
+      ['', '· · Cobros', fmtEnt(c.nCobros), fmt(c.sumaCobros)],
+      ['', '· · Devoluciones', fmtEnt(c.nDevoluciones), fmt(c.sumaDevoluciones)],
+      ['b', '= Neto del período', fmtEnt(c.movimientos), fmt(c.sumaCobros + c.sumaDevoluciones)],
+      ['h', 'De las cuentas a las facturas', '', ''],
+      ['', 'Cuentas con movimientos', fmtEnt(c.cuentas), ''],
+      ['', '· Quedaron en cero (no se facturan)', fmtEnt(c.enCero), fmt(0)],
+      ['b', '= Facturas', fmtEnt(c.aFacturar), fmt(c.total)],
+      ['h', 'Las cinco cuentas más grandes', '', ''],
+    ].concat(t.slice(0, 5).map(g => ['', g.cuenta + ' (' + g.idDash + ')', fmtEnt(g.movs) + ' movs', fmt(g.importe)]));
+  } else {
+    const f = resultado.filas;
+    const suma = l => l.reduce((a, x) => a + x.importe, 0);
+    const com = f.filter(x => /deuda por comisiones/i.test(x.detalle));
+    const sus = f.filter(x => !/deuda por comisiones/i.test(x.detalle));
+    const cc  = f.filter(x => !x.factura);
+    filas = [
+      ['h', 'De dónde salen las filas', 'Filas', 'Importe'],
+      ['', 'Transacciones leídas del reporte', fmtEnt(c.transacciones), ''],
+      ['', '· Detalle «Deuda por comisiones»', fmtEnt(com.length), fmt(suma(com))],
+      ['', '· Detalle «Suscripción Tu delivery - Fudo»', fmtEnt(sus.length), fmt(suma(sus))],
+      ['b', '= Deuda fija (van al extracto)', fmtEnt(f.length), fmt(suma(f))],
+      ['', '· Contracargos (no se facturan)', fmtEnt(cc.length), fmt(suma(cc))],
+      ['b', '= A facturar', fmtEnt(c.aFacturar), fmt(c.total)]
+    ];
+  }
+  $('#tabla').innerHTML = '<thead><tr><th>Concepto</th><th>Filas</th><th>Importe</th></tr></thead><tbody>' +
+    filas.map(([est, a, b, d]) => {
+      if (est === 'h') return '<tr><th colspan="3" style="position:static">' + esc(a) + '</th></tr>';
+      const w = est === 'b' ? ' style="font-weight:700"' : '';
+      return '<tr' + w + '><td>' + esc(a) + '</td><td class="n">' + esc(b) + '</td><td class="n">' + esc(d) + '</td></tr>';
+    }).join('') + '</tbody>';
+  $('#pieTabla').textContent = 'El Excel trae este mismo cuadre en la hoja «Control», con los totales como fórmula.';
+}
+
+function pintarTabla(){
+  if (pestania === 'ctrl') return pintarCuadre();
+  if (resultado.modo === 'viva') return pintarTablaViva();
+  const f = resultado.filas;
+  let cols, filas;
+  if (pestania === 'df') {
+    cols = ['Identificación','Operación','Tipo','Detalle','Origen','Fecha de pago','Cuenta','ID dash','Importe'];
+    filas = f.map(x => [x.ident, x.operacion, x.tipo, x.detalle, x.origen, x.fecha, x.cuenta, x.idDash,
+      { n: x.importe }, x]);
+  } else if (pestania === 'extracto') {
+    cols = ['Fecha','Descripción','Contacto','Referencia','Importe','ID dash'];
+    filas = f.map(x => [x.fecha, x.descripcion, x.contacto, x.operacion, { n: x.importe }, x.idDash, x]);
+  } else if (pestania === 'fact') {
+    cols = ['Fecha','Rz','Referencia facturación','Condición','Referencia','Importe total','Sin IVA','Id cuenta','Nota interna'];
+    const fecha = $('#fecha').value || '';
+    filas = resultado.aFacturar.map(x => [fecha, x.contacto, x.descripcion, x.condicion, x.operacion,
+      { n: x.importe }, { n: x.importe / 1.21 }, x.idDash, x.idDash + '/TO/DF', x]);
+  } else {
+    cols = ['Orden','Contacto','Referencia','Fecha','Ref. de pago','Diario','Tipo de documento',
+            'Precio unitario','Nota interna','Servicio desde','Servicio hasta'];
+    const fecha = $('#fecha').value || '';
+    const per = mesDe(fecha);
+    filas = resultado.aFacturar.map((x, i) => [i + 1, x.contacto, x.descripcion, fecha, x.operacion,
+      x.diario, x.tipoDoc, { n: x.importe / 1.21 }, x.idDash + '/TO/DF', per[0], per[1], x]);
+  }
+  const cuerpo = filas.slice(0, 400).map(fila => {
+    const x = fila[fila.length - 1];
+    const alerta = !x.idDash || !x.contacto || !x.fecha || x.cuentaDudosa || (x.factura && !x.tipoDoc);
+    const celdas = fila.slice(0, -1).map(v =>
+      v && typeof v === 'object' ? '<td class="n">' + fmt(v.n) + '</td>' : '<td>' + esc(v) + '</td>').join('');
+    return '<tr class="' + (alerta ? 'alerta' : '') + '">' + celdas + '</tr>';
+  }).join('');
+  $('#tabla').innerHTML = '<thead><tr>' + cols.map(c => '<th>' + c + '</th>').join('') +
+    '</tr></thead><tbody>' + cuerpo + '</tbody>';
+  $('#pieTabla').textContent = filas.length > 400
+    ? 'Se muestran las primeras 400 de ' + fmtEnt(filas.length) + '. El Excel las trae todas.'
+    : fmtEnt(filas.length) + ' fila(s).';
+}
+
+function pintarTablaViva(){
+  if (pestania === 'ctrl') return pintarCuadre();
+  const fecha = $('#fecha').value || '', per = periodoActual();
+  let cols, filas;
+  if (pestania === 'extracto') {
+    cols = ['Fecha','Descripción','Contacto','Referencia','Importe'];
+    filas = resultado.grupos.map(g => [fecha, g.cuenta, g.contacto, per + ' - ' + g.idDash,
+      { n: g.importe }, g]);
+  } else if (pestania === 'fact') {
+    cols = ['Fecha','Nombre de la cuenta','Razón social','Condición','Referencia de pago',
+            'Importe total','Sin IVA','Términos','Id cuenta','Nota interna'];
+    filas = resultado.grupos.map(g => [fecha, 'Tu Delivery - ' + g.cuenta, g.contacto, g.condicion,
+      per + ' - ' + g.idDash, { n: g.importe }, { n: g.importe / 1.21 }, per, g.idDash,
+      g.idDash + '/TO/DV', g]);
+  } else {
+    const rango = mesDe(fecha);
+    cols = ['Orden','Contacto','Referencia','Fecha','Ref. de pago','Diario','Tipo de documento',
+            'Precio unitario','Nota interna','Servicio desde','Servicio hasta'];
+    filas = resultado.grupos.map((g, i) => [i + 1, g.contacto, 'Tu Delivery - ' + g.cuenta, fecha,
+      per + ' - ' + g.idDash, g.diario, g.tipoDoc, { n: g.importe / 1.21 }, g.idDash + '/TO/DV',
+      rango[0], rango[1], g]);
+  }
+  const cuerpo = filas.slice(0, 400).map(fila => {
+    const g = fila[fila.length - 1];
+    const alerta = !g.contacto || !g.tipoDoc || g.ids.length > 1;
+    const celdas = fila.slice(0, -1).map(v =>
+      v && typeof v === 'object' ? '<td class="n">' + fmt(v.n) + '</td>' : '<td>' + esc(v) + '</td>').join('');
+    return '<tr class="' + (alerta ? 'alerta' : '') + '">' + celdas + '</tr>';
+  }).join('');
+  $('#tabla').innerHTML = '<thead><tr>' + cols.map(c => '<th>' + c + '</th>').join('') +
+    '</tr></thead><tbody>' + cuerpo + '</tbody>';
+  $('#pieTabla').textContent = filas.length > 400
+    ? 'Se muestran las primeras 400 de ' + fmtEnt(filas.length) + '. El Excel las trae todas.'
+    : fmtEnt(filas.length) + ' fila(s).';
+}
+
+/* ================= EXCEL ================= */
+const AZUL_HDR = { s:{ fill:{ patternType:'solid', fgColor:{ rgb:'FF5023' } },
+  font:{ bold:true, color:{ rgb:'FFFFFF' }, name:'Barlow' },
+  alignment:{ vertical:'center', wrapText:true } } };
+const AMARILLO = { s:{ fill:{ patternType:'solid', fgColor:{ rgb:'FFE9A8' } } } };
+const N2 = '#,##0.00', FECHA = 'dd/mm/yyyy';
+
+// Las fechas van como número de serie entero. Si van como Date, el escritor las pasa
+// a hora local y quedan con fracción, que Excel muestra un día antes según el huso.
+const EPOCA_XL = Date.UTC(1899, 11, 30);
+function serieFecha(iso){
+  const d = DFCore.helpers.aDate(iso);
+  if (!d) return '';
+  return Math.round((Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - EPOCA_XL) / 86400000);
+}
+function celda(v, extra){
+  if (v === null || v === undefined || v === '') return Object.assign({ t:'s', v:'' }, extra||{});
+  if (typeof v === 'number') return Object.assign({ t:'n', v:v }, extra||{});
+  return Object.assign({ t:'s', v:String(v) }, extra||{});
+}
+function fechaCelda(iso, extra){
+  const s = serieFecha(iso);
+  return s === '' ? celda('', extra) : Object.assign({ t:'n', v:s, z:FECHA }, extra||{});
+}
+// Los IDs largos como número se ven 1,8E+11: van como texto con apóstrofo, igual que
+// los pegás vos en el Excel.
+const conApostrofo = v => celda("'" + DFCore.helpers.txt(v));
+function numOTexto(v){
+  const s = DFCore.helpers.txt(v);
+  return s !== '' && /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : s;
+}
+function hojaDesde(aoa, anchos){
+  const ws = XLSX.utils.aoa_to_sheet([], { cellDates:true });
+  const rango = { s:{ r:0, c:0 }, e:{ r:aoa.length-1, c:0 } };
+  aoa.forEach((fila, r) => {
+    fila.forEach((c, i) => {
+      if (c === undefined) return;
+      if (i > rango.e.c) rango.e.c = i;
+      ws[XLSX.utils.encode_cell({ r:r, c:i })] = c;
+    });
+  });
+  ws['!ref'] = XLSX.utils.encode_range(rango);
+  if (anchos) ws['!cols'] = anchos.map(w => ({ wch:w }));
+  ws['!freeze'] = { xSplit:0, ySplit:1 };
+  return ws;
+}
+
+const COLS_DF = ['NÚMERO DE IDENTIFICACIÓN','ID DE OPERACIÓN EN MERCADO PAGO','TIPO DE OPERACIÓN',
+  'DETALLE DE LA VENTA','VALOR DE LA COMPRA','Type','ID','Nombre de la cuenta','ID dash',
+  'Fecha de liberación','FECHA DE PAGO','Contacto Odoo','Condición frente al impuesto'];
+function hojaDF(){
+  const aoa = [COLS_DF.map(t => celda(t, AZUL_HDR))];
+  resultado.filas.forEach(f => {
+    const falta = k => (k ? null : AMARILLO);
+    aoa.push([
+      celda(f.ident), conApostrofo(f.operacion), celda(f.tipo), celda(f.detalle),
+      celda(f.importe, { z:N2 }),
+      celda('Paid offline'),
+      celda(numOTexto(f.idDash), falta(f.idDash)),
+      celda(f.cuenta, f.cuentaDudosa ? AMARILLO : null),
+      celda(numOTexto(f.idDash), falta(f.idDash)),
+      fechaCelda(f.origen),
+      fechaCelda(f.fecha, falta(f.fecha)),
+      celda(numOTexto(f.contacto), falta(f.contacto)),
+      celda(f.condicion, falta(f.condicion))
+    ]);
+  });
+  return hojaDesde(aoa, [24,16,19,26,15,12,10,26,10,14,14,12,26]);
+}
+
+const COLS_EXT = ['FECHA','DESCRIPCIÓN','Contacto/ID de la DB','REFERENCIA','IMPORTE','ID dash'];
+function hojaExtracto(){
+  const aoa = [COLS_EXT.map(t => celda(t, AZUL_HDR))];
+  resultado.filas.forEach(f => {
+    aoa.push([
+      fechaCelda(f.fecha, f.fecha ? null : AMARILLO),
+      celda(f.descripcion),
+      celda(numOTexto(f.contacto), f.contacto ? null : AMARILLO),
+      conApostrofo(f.operacion),
+      celda(f.importe, { z:N2 }),
+      celda(numOTexto(f.idDash), f.idDash ? null : AMARILLO)
+    ]);
+  });
+  return hojaDesde(aoa, [11,38,20,17,14,10]);
+}
+
+const COLS_FACT = ['Fecha','Rz','Referencia Facturación','Condicion impuest','Referencia','Importe total',
+  'Importe sin IVA','Terminos y condiciones','Id Cuenta','Nota Interna'];
+const TERMINOS = 'Deuda Fija - Tienda Online';
+function hojaFact(){
+  const aoa = [COLS_FACT.map(t => celda(t, AZUL_HDR))];
+  const fecha = $('#fecha').value || '';
+  resultado.aFacturar.forEach(f => {
+    aoa.push([
+      fechaCelda(fecha, fecha ? null : AMARILLO),
+      celda(numOTexto(f.contacto), f.contacto ? null : AMARILLO),
+      celda(f.descripcion),
+      celda(f.condicion, f.condicion ? null : AMARILLO),
+      conApostrofo(f.operacion),
+      celda(f.importe, { z:N2 }),
+      celda(Math.round(f.importe / 1.21 * 100000000) / 100000000, { z:N2 }),
+      celda(TERMINOS),
+      celda(numOTexto(f.idDash), f.idDash ? null : AMARILLO),
+      celda(f.idDash ? f.idDash + '/TO/DF' : '', f.idDash ? null : AMARILLO)
+    ]);
+  });
+  return hojaDesde(aoa, [11,11,38,24,17,14,14,26,11,18]);
+}
+
+/* La hoja tal cual la importás a Odoo. El encabezado va en la fila 1 y los datos
+   desde la 2, así se copia derecho a tu archivo. */
+const COLS_IMP = ['Orden','Contacto/ID de la DB','Referencia','Fecha de Factura/Recibo','Fecha vencimiento',
+  'Referencia de pago','Términos y condiciones','Diario','Tipo de Documento','Plancito',
+  'Líneas de factura/Producto','Líneas de factura/Cuenta','invoice_line_ids/analytic_distribution',
+  'Líneas de factura/Cantidad mínima','Líneas de factura/Impuestos','Líneas de factura/Precio unitario',
+  'Líneas de factura/Unidad de medida','Líneas de factura/ Descuento (%)','Líneas de factura/ Nota interna',
+  'Fecha inicio del servicio AFIP','Fecha Fin del Servicio AFIP','','validación'];
+const TERMINOS_IMP = 'Deuda Fija - Tu Delivery';
+const PLANCITO = 'T.O. Plus', PRODUCTO = 'Comisiones T.O. Plus';
+const CUENTA = '4.1.2.01.050 Comisiones Tienda online';
+const ANALITICA = '{"1": 100}';   // la misma para fija y para viva
+// El período de servicio de ARCA es el mes completo de la fecha de factura.
+function mesDe(iso){
+  const d = DFCore.helpers.aDate(iso);
+  if (!d) return ['', ''];
+  const y = d.getUTCFullYear(), m = d.getUTCMonth();
+  const ini = new Date(Date.UTC(y, m, 1)), fin = new Date(Date.UTC(y, m + 1, 0));
+  const p = x => x.toISOString().slice(0,10);
+  return [p(ini), p(fin)];
+}
+function hojaImport(){
+  const aoa = [COLS_IMP.map(t => celda(t, AZUL_HDR))];
+  const fecha = $('#fecha').value || '';
+  const per = mesDe(fecha);
+  resultado.aFacturar.forEach((f, i) => {
+    const r = i + 2;                                   // fila real en el Excel
+    aoa.push([
+      celda(i + 1),
+      celda(numOTexto(f.contacto), f.contacto ? null : AMARILLO),
+      celda(f.descripcion),
+      fechaCelda(fecha, fecha ? null : AMARILLO),
+      fechaCelda(fecha, fecha ? null : AMARILLO),
+      conApostrofo(f.operacion),
+      celda(TERMINOS_IMP),
+      celda(f.diario, f.diario ? null : AMARILLO),
+      celda(f.tipoDoc, f.tipoDoc ? null : AMARILLO),
+      celda(PLANCITO),
+      celda(PRODUCTO),
+      celda(CUENTA),
+      celda(ANALITICA),
+      celda(1),
+      celda(f.impuesto || 'IVA 21%'),
+      celda(Math.round(f.importe / 1.21 * 100000000) / 100000000, { z:N2 }),
+      celda('Unidades'),
+      celda(0),
+      celda(f.idDash ? f.idDash + '/TO/DF' : '', f.idDash ? null : AMARILLO),
+      fechaCelda(per[0]),
+      fechaCelda(per[1]),
+      celda(''),
+      { t:'n', f:'+N' + r + '*P' + r + '*(1-(R' + r + '/100))*1.21', z:N2 }
+    ]);
+  });
+  return hojaDesde(aoa, [7,17,38,13,13,17,24,19,17,11,22,34,30,12,12,17,14,12,18,14,14,4,14]);
+}
+
+/* ---------- hojas de deuda viva ---------- */
+const COLS_EXT_V = ['Fecha','Descripción','Contacto/ID de la DB','Referencia','Importe','ID dash'];
+function hojaExtractoViva(){
+  const aoa = [COLS_EXT_V.map(t => celda(t, AZUL_HDR))];
+  const fecha = $('#fecha').value || '', per = periodoActual();
+  resultado.grupos.forEach(g => {
+    aoa.push([
+      fechaCelda(fecha, fecha ? null : AMARILLO),
+      celda(g.cuenta),
+      celda(numOTexto(g.contacto), g.contacto ? null : AMARILLO),
+      celda(per + ' - ' + g.idDash),
+      celda(g.importe, { z:N2 }),
+      celda(numOTexto(g.idDash))
+    ]);
+  });
+  return hojaDesde(aoa, [11,36,20,22,14,10]);
+}
+
+const COLS_FACT_V = ['Fecha','Nombre de la cuenta','Razon social','Referencia Facturación',
+  'Condicion impuesto','Referencia de pago','Importe total','Importe sin IVA','Terminos y condiciones',
+  'Id Cuenta','Nota Interna'];
+function hojaFactViva(){
+  const aoa = [COLS_FACT_V.map(t => celda(t, AZUL_HDR))];
+  const fecha = $('#fecha').value || '', per = periodoActual();
+  resultado.grupos.forEach(g => {
+    const nombre = 'Tu Delivery - ' + g.cuenta;
+    aoa.push([
+      fechaCelda(fecha, fecha ? null : AMARILLO),
+      celda(nombre),
+      celda(numOTexto(g.contacto), g.contacto ? null : AMARILLO),
+      celda(nombre),
+      celda(g.condicion, g.condicion ? null : AMARILLO),
+      celda(per + ' - ' + g.idDash),
+      celda(g.importe, { z:N2 }),
+      celda(Math.round(g.importe / 1.21 * 100000000) / 100000000, { z:N2 }),
+      celda(per, per ? null : AMARILLO),
+      celda(numOTexto(g.idDash)),
+      celda(g.idDash + '/TO/DV')
+    ]);
+  });
+  return hojaDesde(aoa, [11,36,12,36,24,22,14,14,15,11,18]);
+}
+
+function hojaImportViva(){
+  const aoa = [COLS_IMP.map(t => celda(t, AZUL_HDR))];
+  const fecha = $('#fecha').value || '', per = periodoActual(), rango = mesDe(fecha);
+  resultado.grupos.forEach((g, i) => {
+    const r = i + 2;
+    aoa.push([
+      celda(i + 1),
+      celda(numOTexto(g.contacto), g.contacto ? null : AMARILLO),
+      celda('Tu Delivery - ' + g.cuenta),
+      fechaCelda(fecha, fecha ? null : AMARILLO),
+      fechaCelda(fecha, fecha ? null : AMARILLO),
+      celda(per + ' - ' + g.idDash),
+      celda(per, per ? null : AMARILLO),
+      celda(g.diario, g.diario ? null : AMARILLO),
+      celda(g.tipoDoc, g.tipoDoc ? null : AMARILLO),
+      celda(PLANCITO),
+      celda(PRODUCTO),
+      celda(CUENTA),
+      celda(ANALITICA),
+      celda(1),
+      celda(g.impuesto || 'IVA 21%'),
+      celda(Math.round(g.importe / 1.21 * 100000000) / 100000000, { z:N2 }),
+      celda('Unidades'),
+      celda(0),
+      celda(g.idDash + '/TO/DV'),
+      fechaCelda(rango[0]),
+      fechaCelda(rango[1]),
+      celda(''),
+      { t:'n', f:'+N' + r + '*P' + r + '*(1-(R' + r + '/100))*1.21', z:N2 }
+    ]);
+  });
+  return hojaDesde(aoa, [7,11,36,13,13,22,15,19,17,11,22,34,30,12,12,17,14,12,18,14,14,4,14]);
+}
+
+/* ---------- hojas de control ----------
+   La idea es que puedas rastrear cualquier importe sin salir del Excel: de dónde
+   sale cada peso y que las cuatro hojas cierren entre sí. Los totales van como
+   fórmula, no como valor, así que si tocás una fila el cuadre se mueve con vos. */
+const TIT = { s:{ font:{ bold:true, sz:13, color:{ rgb:'FF5023' }, name:'Barlow' } } };
+const SUB = { s:{ fill:{ patternType:'solid', fgColor:{ rgb:'E1E1F5' } },
+  font:{ bold:true, color:{ rgb:'3938A0' }, name:'Barlow' } } };
+const NEGRITA = { s:{ font:{ bold:true, name:'Barlow' } } };
+const VERDE = { s:{ fill:{ patternType:'solid', fgColor:{ rgb:'E6F4ED' } },
+  font:{ bold:true, color:{ rgb:'0F7B4F' } } } };
+// si ya viene armada (una fórmula, por ejemplo) la dejo pasar tal cual
+const cel = (v, est) => (v && typeof v === 'object' && (v.f !== undefined || v.t !== undefined))
+  ? Object.assign({}, v, est || {}) : celda(v, est);
+const linea = (a, b, c, est) => [cel(a, est), cel(b, est), cel(c, est)];
+
+function bloqueAvisos(aoa){
+  aoa.push([]);
+  aoa.push([celda('QUÉ CONVIENE REVISAR', SUB), celda('', SUB), celda('', SUB)]);
+  const revisar = resultado.avisos.filter(a => a.tipo !== 'ok');
+  if (!revisar.length) { aoa.push(linea('Nada quedó sin resolver.', '', '')); return; }
+  revisar.forEach(a => {
+    aoa.push(linea(a.msg, '', '', NEGRITA));
+    (a.extra || []).slice(0, 200).forEach(x => aoa.push(linea('', Object.values(x).join(' · '), '')));
+    if (a.extra && a.extra.length > 200) aoa.push(linea('', '… y ' + (a.extra.length - 200) + ' más', ''));
+  });
+}
+
+function hojaControlFija(){
+  const c = resultado.control, f = resultado.filas;
+  const suma = lista => Math.round(lista.reduce((a, x) => a + x.importe, 0) * 100) / 100;
+  const com = f.filter(x => /deuda por comisiones/i.test(x.detalle));
+  const sus = f.filter(x => !/deuda por comisiones/i.test(x.detalle));
+  const cc  = f.filter(x => !x.factura);
+  const aoa = [
+    [celda('Control · deuda fija', TIT)],
+    [celda('Cada factura es una transacción, así que el detalle fila por fila está en la hoja «Deuda Fija».')],
+    [],
+    [celda('DE DÓNDE SALEN LAS FILAS', SUB), celda('Filas', SUB), celda('Importe', SUB)],
+    linea('Transacciones leídas del reporte', c.transacciones, ''),
+    linea('  Detalle «Deuda por comisiones»', com.length, suma(com)),
+    linea('  Detalle «Suscripción Tu delivery - Fudo»', sus.length, suma(sus)),
+    linea('= Deuda fija (van al extracto)', f.length, suma(f), NEGRITA),
+    linea('  Contracargos (no se facturan)', cc.length, suma(cc)),
+    linea('= A facturar', c.aFacturar, c.total, NEGRITA),
+    [],
+    [celda('QUE CIERRE ENTRE HOJAS', SUB), celda('', SUB), celda('Importe', SUB)],
+    linea('Suma de la hoja Deuda Fija', '', { t:'n', f:"SUM('Deuda Fija'!E:E)", z:N2 }),
+    linea('Suma del Extracto Odoo', '', { t:'n', f:"SUM('Extracto Odoo'!E:E)", z:N2 }),
+    linea('Suma de Facturación Completo', '', { t:'n', f:"SUM('Facturación Completo'!F:F)", z:N2 }),
+    linea('Suma del Import (columna validación)', '', { t:'n', f:"SUM('Import Odoo - T.O FIJA'!W:W)", z:N2 }),
+    [celda('CONTROL · extracto − contracargos − facturación', VERDE), celda('', VERDE),
+     Object.assign({ t:'n', f:"ROUND(SUM('Deuda Fija'!E:E)-SUM('Facturación Completo'!F:F)-" + suma(cc) + ",2)", z:N2 }, VERDE)],
+    linea('(tiene que dar 0)', '', '')
+  ];
+  bloqueAvisos(aoa);
+  const ws = hojaDesde(aoa, [46, 14, 18]);
+  ws['!freeze'] = null;
+  return ws;
+}
+
+const COLS_DET_V = ['NÚMERO DE IDENTIFICACIÓN','ID DE OPERACIÓN EN MERCADO PAGO','TIPO DE OPERACIÓN',
+  'DETALLE DE LA VENTA','FECHA DE ORIGEN','ID dash','Cuenta','VALOR DE LA COMPRA'];
+function hojaDetalleViva(){
+  const aoa = [COLS_DET_V.map(t => celda(t, AZUL_HDR))];
+  resultado.todos.forEach(g => {
+    g.detalle.forEach(d => {
+      aoa.push([
+        celda(d.ident), conApostrofo(d.operacion), celda(d.tipo), celda(d.venta),
+        fechaCelda(d.origen), celda(numOTexto(d.idDash)), celda(g.cuenta),
+        celda(d.importe, { z:N2 })
+      ]);
+    });
+  });
+  return hojaDesde(aoa, [24,16,19,30,13,10,32,16]);
+}
+
+function hojaControlViva(){
+  const c = resultado.control;
+  const aoa = [
+    [celda('Control · deuda viva', TIT)],
+    [celda('Cada factura es la suma de muchas transacciones. El respaldo está en la hoja «Deuda Viva»: filtrá por Cuenta y te da el importe de la factura.')],
+    [],
+    [celda('DE DÓNDE SALEN LAS FILAS', SUB), celda('Filas', SUB), celda('Importe', SUB)],
+    linea('Transacciones leídas del reporte', c.transacciones, ''),
+    linea('  Cobradas por Mercado Pago (FUDO-…)', c.movimientos, ''),
+    linea('    Cobros', c.nCobros, c.sumaCobros),
+    linea('    Devoluciones', c.nDevoluciones, c.sumaDevoluciones),
+    linea('= Neto del período', c.movimientos, Math.round((c.sumaCobros + c.sumaDevoluciones) * 100) / 100, NEGRITA),
+    [],
+    linea('Cuentas con movimientos', c.cuentas, ''),
+    linea('  Cuentas que quedaron en cero (no se facturan)', c.enCero, 0),
+    linea('= Facturas', c.aFacturar, c.total, NEGRITA),
+    [],
+    [celda('QUE CIERRE ENTRE HOJAS', SUB), celda('', SUB), celda('Importe', SUB)],
+    linea('Suma del detalle (hoja Deuda Viva)', '', { t:'n', f:"SUM('Deuda Viva'!H:H)", z:N2 }),
+    linea('Suma del Extracto Odoo', '', { t:'n', f:"SUM('Extracto Odoo'!E:E)", z:N2 }),
+    linea('Suma de Facturación Completo', '', { t:'n', f:"SUM('Facturación Completo'!G:G)", z:N2 }),
+    linea('Suma del Import (columna validación)', '', { t:'n', f:"SUM('Import Odoo - T.O VIVA'!W:W)", z:N2 }),
+    [celda('CONTROL · detalle − facturación', VERDE), celda('', VERDE),
+     Object.assign({ t:'n', f:"ROUND(SUM('Deuda Viva'!H:H)-SUM('Facturación Completo'!G:G),2)", z:N2 }, VERDE)],
+    linea('(tiene que dar 0)', '', '')
+  ];
+  bloqueAvisos(aoa);
+  // una fila por cuenta, con la suma recalculada desde el detalle
+  aoa.push([]);
+  aoa.push(['Cuenta','ID dash','IDs que junté','Movimientos','Cobros','Devoluciones',
+    'Total calculado','Suma del detalle','Facturado','Diferencia'].map(t => celda(t, AZUL_HDR)));
+  const base = aoa.length;                       // fila de Excel de la primera cuenta
+  resultado.todos.forEach((g, i) => {
+    const r = base + i + 1;
+    aoa.push([
+      celda(g.cuenta), celda(numOTexto(g.idDash || g.ids[0])),
+      celda(g.ids.length > 1 ? g.ids.join(' + ') : ''),
+      celda(g.movs), celda(g.cobros, { z:N2 }), celda(g.devoluciones, { z:N2 }),
+      celda(g.importe, { z:N2 }),
+      { t:'n', f:"SUMIF('Deuda Viva'!$G:$G,$A" + r + ",'Deuda Viva'!$H:$H)", z:N2 },
+      { t:'n', f:"IFERROR(SUMIF('Facturación Completo'!$B:$B,\"Tu Delivery - \"&$A" + r +
+                 ",'Facturación Completo'!$G:$G),0)", z:N2 },
+      { t:'n', f:"ROUND(H" + r + "-I" + r + ",2)", z:N2 }
+    ]);
+  });
+  const ws = hojaDesde(aoa, [34,11,20,13,16,15,16,16,16,12]);
+  ws['!freeze'] = null;
+  return ws;
+}
+
+function nombreSalida(){
+  const f = ($('#fecha').value || '').replace(/-/g,'');
+  return (resultado && resultado.modo === 'viva' ? 'Deuda Viva' : 'Deuda Fija') + ' Tu Delivery AR ' + f + '.xlsx';
+}
+$('#btnXlsx').addEventListener('click', () => {
+  if (!resultado) return;
+  const wb = XLSX.utils.book_new();
+  if (resultado.modo === 'viva') {
+    XLSX.utils.book_append_sheet(wb, hojaControlViva(), 'Control');
+    XLSX.utils.book_append_sheet(wb, hojaDetalleViva(), 'Deuda Viva');
+    XLSX.utils.book_append_sheet(wb, hojaExtractoViva(), 'Extracto Odoo');
+    XLSX.utils.book_append_sheet(wb, hojaFactViva(), 'Facturación Completo');
+    XLSX.utils.book_append_sheet(wb, hojaImportViva(), 'Import Odoo - T.O VIVA');
+  } else {
+    XLSX.utils.book_append_sheet(wb, hojaControlFija(), 'Control');
+    XLSX.utils.book_append_sheet(wb, hojaDF(), 'Deuda Fija');
+    XLSX.utils.book_append_sheet(wb, hojaExtracto(), 'Extracto Odoo');
+    XLSX.utils.book_append_sheet(wb, hojaFact(), 'Facturación Completo');
+    XLSX.utils.book_append_sheet(wb, hojaImport(), 'Import Odoo - T.O FIJA');
+  }
+  descargarLibro(wb, nombreSalida());
+});
+
+/* El escritor de xlsx no sabe guardar el zoom, así que abro el .xlsx (que es un zip),
+   le pongo zoomScale 70 a cada hoja y lo vuelvo a cerrar. Si no está JSZip, bajo el
+   archivo igual, nada más que con el zoom de fábrica. */
+const ZOOM_HOJAS = 70;
+function descargarLibro(wb, nombre){
+  const opciones = { cellDates:true, bookSST:false };
+  if (typeof JSZip === 'undefined') { XLSX.writeFile(wb, nombre, opciones); return; }
+  const datosXl = XLSX.write(wb, Object.assign({ type:'array' }, opciones));
+  JSZip.loadAsync(datosXl).then(zip => {
+    const pendientes = [];
+    zip.forEach((ruta, archivo) => {
+      if (!/^xl\/worksheets\/sheet\d+\.xml$/i.test(ruta) || archivo.dir) return;
+      pendientes.push(archivo.async('string').then(xml => {
+        const z = ' zoomScale="' + ZOOM_HOJAS + '" zoomScaleNormal="' + ZOOM_HOJAS + '"';
+        const nuevo = /<sheetView[ />]/.test(xml)
+          ? xml.replace(/<sheetView\b/, '<sheetView' + z)
+          : xml.replace(/<sheetData\b/, '<sheetViews><sheetView' + z + ' workbookViewId="0"/></sheetViews><sheetData');
+        zip.file(ruta, nuevo);
+      }));
+    });
+    return Promise.all(pendientes).then(() => zip.generateAsync({ type:'blob', compression:'DEFLATE' }));
+  }).then(blob => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = nombre;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }).catch(() => XLSX.writeFile(wb, nombre, opciones));
+}
+
+cambiarModo('fija');
+</script>
+</body>
+</html>
