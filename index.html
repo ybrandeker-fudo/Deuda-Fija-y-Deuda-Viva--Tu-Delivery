@@ -298,11 +298,11 @@
         <ul>
           <li><b>DF</b> — las filas de transacciones que entraron, con el ID y el nombre de cuenta
               resueltos y las dos fechas. Es la hoja de control.</li>
-          <li><b>Extracto Odoo</b> — Fecha, Descripción, Contacto, Referencia, Importe e ID dash.</li>
-          <li><b>Facturación Completo</b> — con la fecha de factura que cargues arriba, el importe sin
+          <li><b>Import Odoo Extracto</b> — Fecha, Descripción, Contacto, Referencia, Importe e ID dash.</li>
+          <li><b>Preparación FC</b> — con la fecha de factura que cargues arriba, el importe sin
               IVA (total ÷ 1,21), los términos fijos «Deuda Fija - Tienda Online» y la nota interna
               <code>&lt;ID dash&gt;/TO/DF</code>.</li>
-          <li><b>Import Odoo - T.O FIJA</b> — la misma información pero con las 21 columnas del import,
+          <li><b>Import Odoo Facturación DF</b> — la misma información pero con las 21 columnas del import,
               lista para copiar a tu archivo. El tipo de documento sale de la responsabilidad frente a
               ARCA (<code>FACTURAS A</code> para Responsable Inscripto y Monotributo,
               <code>FACTURAS B</code> para Consumidor Final y Sujeto Exento), el período de servicio es el
@@ -313,7 +313,7 @@
            arriba, así se ve de un vistazo qué hay que completar a mano.</p>
         <p>Además, los dos circuitos bajan una hoja <b>Control</b> con el cuadre: de cuántas filas se
            partió, cuáles entraron y por qué, y los totales de cada hoja como fórmula viva, con una línea
-           final que tiene que dar cero. En deuda viva la hoja <b>Deuda Viva</b> guarda el detalle
+           final que tiene que dar cero. En deuda viva la hoja <b>Reporte</b> guarda el detalle
            transacción por transacción: filtrá por <code>Cuenta</code> y te da el importe de la factura.
            La tabla por cuenta de la hoja Control lo recalcula sola con un <code>SUMIF</code> contra ese
            detalle, así que si borrás o agregás filas el control se mueve con vos.</p>
@@ -892,9 +892,10 @@ function pintar(){
   }).join('');
 
   const tabs = resultado.modo === 'viva'
-    ? [['ctrl','Control'], ['extracto','Extracto Odoo'], ['fact','Facturación Completo'], ['imp','Import Odoo · T.O VIVA']]
-    : [['ctrl','Control'], ['df','Deuda Fija · detalle'], ['extracto','Extracto Odoo'],
-       ['fact','Facturación Completo'], ['imp','Import Odoo · T.O FIJA']];
+    ? [['extracto','Import Odoo Extracto'], ['imp','Import Odoo Facturación DV'],
+       ['fact','Preparación FC'], ['ctrl','Control']]
+    : [['extracto','Import Odoo Extracto'], ['imp','Import Odoo Facturación DF'],
+       ['fact','Preparación FC'], ['df','Reporte'], ['ctrl','Control']];
   if (!tabs.some(t => t[0] === pestania)) pestania = 'ctrl';
   $('#tabs').innerHTML = tabs.map(([k, t]) => {
     const n = k === 'ctrl' ? '' :
@@ -1033,7 +1034,9 @@ const AZUL_HDR = { s:{ fill:{ patternType:'solid', fgColor:{ rgb:'FF5023' } },
   font:{ bold:true, color:{ rgb:'FFFFFF' }, name:'Barlow' },
   alignment:{ vertical:'center', wrapText:true } } };
 const AMARILLO = { s:{ fill:{ patternType:'solid', fgColor:{ rgb:'FFE9A8' } } } };
-const N2 = '#,##0.00', FECHA = 'dd/mm/yyyy';
+// Sin separador de miles: el 0.00 deja dos decimales y Excel muestra la coma
+// según tu configuración regional (12345,67 en vez de 12.345,67).
+const N2 = '0.00', FECHA = 'dd/mm/yyyy';
 
 // Las fechas van como número de serie entero. Si van como Date, el escritor las pasa
 // a hora local y quedan con fracción, que Excel muestra un día antes según el huso.
@@ -1297,6 +1300,15 @@ function bloqueAvisos(aoa){
   });
 }
 
+/* Nombres de las hojas del Excel. Las fórmulas de la hoja Control los usan, así
+   que si se cambia un nombre acá se actualiza todo junto.                      */
+const H_EXT   = 'Import Odoo Extracto';
+const H_FACT  = 'Preparación FC';
+const H_DET   = 'Reporte';
+const H_CTRL  = 'Control';
+const H_IMP_F = 'Import Odoo Facturación DF';
+const H_IMP_V = 'Import Odoo Facturación DV';
+
 function hojaControlFija(){
   const c = resultado.control, f = resultado.filas;
   const suma = lista => Math.round(lista.reduce((a, x) => a + x.importe, 0) * 100) / 100;
@@ -1305,7 +1317,7 @@ function hojaControlFija(){
   const cc  = f.filter(x => !x.factura);
   const aoa = [
     [celda('Control · deuda fija', TIT)],
-    [celda('Cada factura es una transacción, así que el detalle fila por fila está en la hoja «Deuda Fija».')],
+    [celda('Cada factura es una transacción, así que el detalle fila por fila está en la hoja «Reporte».')],
     [],
     [celda('DE DÓNDE SALEN LAS FILAS', SUB), celda('Filas', SUB), celda('Importe', SUB)],
     linea('Transacciones leídas del reporte', c.transacciones, ''),
@@ -1316,12 +1328,12 @@ function hojaControlFija(){
     linea('= A facturar', c.aFacturar, c.total, NEGRITA),
     [],
     [celda('QUE CIERRE ENTRE HOJAS', SUB), celda('', SUB), celda('Importe', SUB)],
-    linea('Suma de la hoja Deuda Fija', '', { t:'n', f:"SUM('Deuda Fija'!E:E)", z:N2 }),
-    linea('Suma del Extracto Odoo', '', { t:'n', f:"SUM('Extracto Odoo'!E:E)", z:N2 }),
-    linea('Suma de Facturación Completo', '', { t:'n', f:"SUM('Facturación Completo'!F:F)", z:N2 }),
-    linea('Suma del Import (columna validación)', '', { t:'n', f:"SUM('Import Odoo - T.O FIJA'!W:W)", z:N2 }),
+    linea('Suma de la hoja Reporte', '', { t:'n', f:"SUM('" + H_DET + "'!E:E)", z:N2 }),
+    linea('Suma del Import Odoo Extracto', '', { t:'n', f:"SUM('" + H_EXT + "'!E:E)", z:N2 }),
+    linea('Suma de Preparación FC', '', { t:'n', f:"SUM('" + H_FACT + "'!F:F)", z:N2 }),
+    linea('Suma del Import (columna validación)', '', { t:'n', f:"SUM('" + H_IMP_F + "'!W:W)", z:N2 }),
     [celda('CONTROL · extracto − contracargos − facturación', VERDE), celda('', VERDE),
-     Object.assign({ t:'n', f:"ROUND(SUM('Deuda Fija'!E:E)-SUM('Facturación Completo'!F:F)-" + suma(cc) + ",2)", z:N2 }, VERDE)],
+     Object.assign({ t:'n', f:"ROUND(SUM('" + H_DET + "'!E:E)-SUM('" + H_FACT + "'!F:F)-" + suma(cc) + ",2)", z:N2 }, VERDE)],
     linea('(tiene que dar 0)', '', '')
   ];
   bloqueAvisos(aoa);
@@ -1364,12 +1376,12 @@ function hojaControlViva(){
     linea('= Facturas', c.aFacturar, c.total, NEGRITA),
     [],
     [celda('QUE CIERRE ENTRE HOJAS', SUB), celda('', SUB), celda('Importe', SUB)],
-    linea('Suma del detalle (hoja Deuda Viva)', '', { t:'n', f:"SUM('Deuda Viva'!H:H)", z:N2 }),
-    linea('Suma del Extracto Odoo', '', { t:'n', f:"SUM('Extracto Odoo'!E:E)", z:N2 }),
-    linea('Suma de Facturación Completo', '', { t:'n', f:"SUM('Facturación Completo'!G:G)", z:N2 }),
-    linea('Suma del Import (columna validación)', '', { t:'n', f:"SUM('Import Odoo - T.O VIVA'!W:W)", z:N2 }),
+    linea('Suma del detalle (hoja Reporte)', '', { t:'n', f:"SUM('" + H_DET + "'!H:H)", z:N2 }),
+    linea('Suma del Import Odoo Extracto', '', { t:'n', f:"SUM('" + H_EXT + "'!E:E)", z:N2 }),
+    linea('Suma de Preparación FC', '', { t:'n', f:"SUM('" + H_FACT + "'!G:G)", z:N2 }),
+    linea('Suma del Import (columna validación)', '', { t:'n', f:"SUM('" + H_IMP_V + "'!W:W)", z:N2 }),
     [celda('CONTROL · detalle − facturación', VERDE), celda('', VERDE),
-     Object.assign({ t:'n', f:"ROUND(SUM('Deuda Viva'!H:H)-SUM('Facturación Completo'!G:G),2)", z:N2 }, VERDE)],
+     Object.assign({ t:'n', f:"ROUND(SUM('" + H_DET + "'!H:H)-SUM('" + H_FACT + "'!G:G),2)", z:N2 }, VERDE)],
     linea('(tiene que dar 0)', '', '')
   ];
   bloqueAvisos(aoa);
@@ -1385,9 +1397,9 @@ function hojaControlViva(){
       celda(g.ids.length > 1 ? g.ids.join(' + ') : ''),
       celda(g.movs), celda(g.cobros, { z:N2 }), celda(g.devoluciones, { z:N2 }),
       celda(g.importe, { z:N2 }),
-      { t:'n', f:"SUMIF('Deuda Viva'!$G:$G,$A" + r + ",'Deuda Viva'!$H:$H)", z:N2 },
-      { t:'n', f:"IFERROR(SUMIF('Facturación Completo'!$B:$B,\"Tu Delivery - \"&$A" + r +
-                 ",'Facturación Completo'!$G:$G),0)", z:N2 },
+      { t:'n', f:"SUMIF('" + H_DET + "'!$G:$G,$A" + r + ",'" + H_DET + "'!$H:$H)", z:N2 },
+      { t:'n', f:"IFERROR(SUMIF('" + H_FACT + "'!$B:$B,\"Tu Delivery - \"&$A" + r +
+                 ",'" + H_FACT + "'!$G:$G),0)", z:N2 },
       { t:'n', f:"ROUND(H" + r + "-I" + r + ",2)", z:N2 }
     ]);
   });
@@ -1404,17 +1416,18 @@ $('#btnXlsx').addEventListener('click', () => {
   if (!resultado) return;
   const wb = XLSX.utils.book_new();
   if (resultado.modo === 'viva') {
-    XLSX.utils.book_append_sheet(wb, hojaControlViva(), 'Control');
-    XLSX.utils.book_append_sheet(wb, hojaDetalleViva(), 'Deuda Viva');
-    XLSX.utils.book_append_sheet(wb, hojaExtractoViva(), 'Extracto Odoo');
-    XLSX.utils.book_append_sheet(wb, hojaFactViva(), 'Facturación Completo');
-    XLSX.utils.book_append_sheet(wb, hojaImportViva(), 'Import Odoo - T.O VIVA');
+    // primero lo que se importa, después la preparación y el reporte, el control al final
+    XLSX.utils.book_append_sheet(wb, hojaExtractoViva(), H_EXT);
+    XLSX.utils.book_append_sheet(wb, hojaImportViva(), H_IMP_V);
+    XLSX.utils.book_append_sheet(wb, hojaFactViva(), H_FACT);
+    XLSX.utils.book_append_sheet(wb, hojaDetalleViva(), H_DET);
+    XLSX.utils.book_append_sheet(wb, hojaControlViva(), H_CTRL);
   } else {
-    XLSX.utils.book_append_sheet(wb, hojaControlFija(), 'Control');
-    XLSX.utils.book_append_sheet(wb, hojaDF(), 'Deuda Fija');
-    XLSX.utils.book_append_sheet(wb, hojaExtracto(), 'Extracto Odoo');
-    XLSX.utils.book_append_sheet(wb, hojaFact(), 'Facturación Completo');
-    XLSX.utils.book_append_sheet(wb, hojaImport(), 'Import Odoo - T.O FIJA');
+    XLSX.utils.book_append_sheet(wb, hojaExtracto(), H_EXT);
+    XLSX.utils.book_append_sheet(wb, hojaImport(), H_IMP_F);
+    XLSX.utils.book_append_sheet(wb, hojaFact(), H_FACT);
+    XLSX.utils.book_append_sheet(wb, hojaDF(), H_DET);
+    XLSX.utils.book_append_sheet(wb, hojaControlFija(), H_CTRL);
   }
   descargarLibro(wb, nombreSalida());
 });
